@@ -1,0 +1,325 @@
+//---------------------------------------------------------------------------
+//
+#include<fstream>
+#include<iostream>
+#include<string>
+//
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Unit2.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+
+using namespace std;
+
+//zmienne globalne
+int player_level = 1;
+String player_name;
+char player_class;
+
+int enemy_level;
+String enemy_level_str;
+char enemy_class;
+
+int p_x;
+int e_x;
+char turn = 'p';
+char result = 'n';      //n - none for now, e - enemy, p - player
+//
+
+TFormFight *FormFight;
+//---------------------------------------------------------------------------
+__fastcall TFormFight::TFormFight(TComponent* Owner)
+        : TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall TFormFight::ButtonChooseWarriorClick(TObject *Sender)
+{
+        ofstream classFile;
+        classFile.open("enemy class.txt", ios::trunc);
+        classFile<<"w";
+        classFile.close();
+        TimerLevelChoice -> Enabled = true;
+}
+//---------------------------------------------------------------------------
+void __fastcall TFormFight::ButtonChooseRogueClick(TObject *Sender)
+{
+        ofstream classFile;
+        classFile.open("enemy class.txt", ios::trunc);
+        classFile<<"r";
+        classFile.close();
+        TimerLevelChoice -> Enabled = true;
+}
+//---------------------------------------------------------------------------
+void __fastcall TFormFight::ButtonChoosePriestClick(TObject *Sender)
+{
+        ofstream classFile;
+        classFile.open("enemy class.txt", ios::trunc);
+        classFile<<"p";
+        classFile.close();
+        TimerLevelChoice -> Enabled = true;
+}
+//---------------------------------------------------------------------------
+void __fastcall TFormFight::TimerLevelChoiceTimer(TObject *Sender)
+{
+        ButtonBeginFight -> Visible = true;
+        TimerLevelChoice -> Enabled = false;
+        LabelChooseClass -> Visible = false;
+        //chowanie przyciskow
+        ButtonChooseWarrior -> Visible = false;
+        ButtonChooseRogue -> Visible = false;
+        ButtonChoosePriest -> Visible = false;
+
+        ButtonBeginFight -> Visible = true;
+        //wyswietlenie input-boxa do wpisania poziomu i wpisanie go do pliku
+        String s = InputBox("Level choice", "Input the level of your opponent:", "3");
+        fstream levelFile;
+        levelFile.open("enemy level.txt", ios::out);
+        levelFile << s;
+        levelFile.close();
+
+        TimerBeginFight -> Enabled = true;
+}
+//---------------------------------------------------------------------------
+void __fastcall TFormFight::TimerBeginFightTimer(TObject *Sender)
+{
+        TimerBeginFight -> Enabled = false;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFormFight::ButtonBeginFightClick(TObject *Sender)
+{
+        ButtonBeginFight -> Visible = false;
+        //wcisniecie fight przenosi gracza do ogladania walki
+        //przypisanie zmiennych opisujacych gracza: player_name, player_level, player_class
+        ifstream charfile("character class.txt");
+        //char c;
+        charfile.get(player_class);
+        charfile.close();
+        //LabelDebug -> Caption = player_class;
+        //przypisywanie klasy gracza dziala
+
+        //teraz przypisanie imienia
+        fstream file;
+        string word, t, q, filename;
+        filename = "character name.txt";
+        file.open(filename.c_str());
+        file >> player_name;
+        file.close();
+        //LabelDebug -> Caption = player_name;
+        //player name tez dziala
+
+        //przypisanie levela
+        fstream file2;
+        string word2, t2, q2, filename2;
+        filename2 = "character level.txt";
+        file2.open(filename2.c_str());
+        file2 >> word2;
+        player_level = word2.length();
+        file2.close();
+        //LabelDebug -> Caption = player_level;
+        //przypisanie levela gracza dziala
+
+        //teraz parametry przeciwnika
+        //klasa przeciwnika
+        ifstream enemycharfile("enemy class.txt");
+        enemycharfile.get(enemy_class);
+        enemycharfile.close();
+        //lvl przeciwnika
+        fstream file3;
+        string word3, t3, q3, filename3;
+        filename3 = "enemy level.txt";
+        file3.open(filename3.c_str());
+        file3 >> enemy_level_str;
+        //enemy_level_str = word3;
+        LabelDebug -> Caption = enemy_level_str;
+        enemy_level = StrToInt(enemy_level_str);
+        file3.close();
+        //enemy level also working
+        //ImagePlayer i ImageEnemy
+        switch(player_class){
+                case 'w':
+                        ImagePlayer -> Picture -> LoadFromFile("sprites and backgrounds/Warrior_202x227.bmp");
+                        break;
+                case 'r':
+                        ImagePlayer -> Picture -> LoadFromFile("sprites and backgrounds/Rogue_202x227.bmp");
+                        break;
+                case 'p':
+                        ImagePlayer -> Picture -> LoadFromFile("sprites and backgrounds/Priest-_1_.bmp");
+                        break;
+        }
+        //ImageEnemy -> Visible = true;
+        LabelDebug -> Caption = enemy_class;
+        switch(enemy_class){
+                case 'w':
+                        ImageEnemy -> Picture -> LoadFromFile("sprites and backgrounds/Warrior_202x227enemy.bmp");
+                        break;
+                case 'r':
+                        ImageEnemy -> Picture -> LoadFromFile("sprites and backgrounds/Rogue_202x227enemy.bmp");
+                        break;
+                case 'p':
+                        ImageEnemy -> Picture -> LoadFromFile("sprites and backgrounds/Priest-_1_enemy.bmp");
+                        break;
+        }
+        LabelPlayerName -> Visible = true;
+        LabelEnemyClass -> Visible = true;
+        LabelPlayerName -> Caption = player_name;
+        //LabelEnemyClass -> Caption = enemy_class;
+        switch(enemy_class){
+                case 'w':
+                        LabelEnemyClass -> Caption = "Enemy Warrior";
+                        break;
+                case 'r':
+                        LabelEnemyClass -> Caption = "Enemy Rogue";
+                        break;
+                case 'p':
+                        LabelEnemyClass -> Caption = "Enemy Priest";
+                        break;
+        }
+        //levels
+        LabelEnemyLevel -> Visible = true;
+        LabelEnemyLevel -> Caption = "LVL. "+IntToStr(enemy_level);
+        LabelPlayerLevel -> Visible = true;
+        LabelPlayerLevel -> Caption = "LVL. "+IntToStr(player_level);
+        //hp bars
+        LabelPlayerHP -> Visible = true;
+        LabelEnemyHP -> Visible = true;
+        LabelPlayerHP -> Caption = IntToStr(player_level * 10 + 10);
+        LabelEnemyHP -> Caption = IntToStr(enemy_level * 10 + 10);
+        /*
+        while(StrToInt(LabelPlayerHP -> Caption)>=0 && StrToInt(LabelEnemyHP -> Caption)>=0){
+                TimerPlayerMove -> Enabled = true;
+                Sleep(1000);
+                TimerPlayerMove -> Enabled = false;
+                TimerPlayerRecall -> Enabled = true;
+                Sleep(1000);
+                TimerPlayerRecall -> Enabled = false;
+
+                TimerEnemyMove -> Enabled = true;
+                Sleep(1000);
+                TimerEnemyMove -> Enabled = false;
+                TimerEnemyRecall -> Enabled = true;
+                Sleep(1000);
+                TimerEnemyRecall -> Enabled = false;
+
+                if(StrToInt(LabelPlayerHP -> Caption)>=0 && StrToInt(LabelEnemyHP -> Caption)>=0)
+                        TimerEnemyMove -> Enabled = true;
+        }
+        */
+        p_x = 1;
+        e_x = 1;
+        turn = 'p';
+
+
+        //TimerPlayerMove -> Enabled = true;
+
+        TimerTurn -> Enabled = true;
+        TimerGameEnd -> Enabled = true;
+}
+//---------------------------------------------------------------------------
+
+
+
+void __fastcall TFormFight::TimerEnemyMoveTimer(TObject *Sender)
+{
+        ImageEnemy -> Left -= 100;
+        if(e_x++ >= 4){
+                e_x = 1;
+                LabelPlayerHP -> Caption = IntToStr(StrToInt(LabelPlayerHP -> Caption) - (enemy_level * 5));
+                TimerEnemyMove -> Enabled = false;
+                TimerEnemyRecall -> Enabled = true;
+        }
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TFormFight::TimerPlayerRecallTimer(TObject *Sender)
+{
+        ImagePlayer -> Left -= 100;
+        //
+        if(p_x++ >= 4){
+                p_x = 1;
+                TimerPlayerRecall -> Enabled = false;
+        }
+        //
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFormFight::TimerEnemyRecallTimer(TObject *Sender)
+{
+        ImageEnemy -> Left += 100;
+        if(e_x++ >= 4){
+                e_x = 1;
+                TimerEnemyRecall -> Enabled = false;
+        }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFormFight::TimerPlayerMoveTimer(TObject *Sender)
+{
+        ImagePlayer -> Left += 100;
+        if(p_x++ >= 4){
+                p_x = 1;
+                LabelEnemyHP -> Caption = IntToStr(StrToInt(LabelEnemyHP -> Caption) - (player_level * 5));
+                TimerPlayerMove -> Enabled = false;
+                TimerPlayerRecall -> Enabled = true;
+        }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFormFight::TimerTurnTimer(TObject *Sender)
+{
+        if(turn == 'p'){
+                turn = 'e';
+                TimerPlayerMove -> Enabled = true;
+
+        }
+        else{
+                turn = 'p';
+                TimerEnemyMove -> Enabled = true;
+        }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFormFight::TimerGameEndTimer(TObject *Sender)
+{
+        if(StrToInt(LabelPlayerHP -> Caption)<=0){
+                TimerEnemyMove -> Enabled = false;
+                TimerPlayerMove -> Enabled = false;
+                TimerTurn -> Enabled = false;
+
+                ButtonGameEnd -> Caption = "Enemy Won!";
+                ButtonGameEnd -> Visible = true;
+        }
+        else if(StrToInt(LabelEnemyHP -> Caption)<=0){
+                TimerEnemyMove -> Enabled = false;
+                TimerPlayerMove -> Enabled = false;
+                TimerTurn -> Enabled = false;
+                
+                ButtonGameEnd -> Caption = "You Won!";
+                ButtonGameEnd -> Visible = true;
+        }
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TFormFight::ButtonGameEndClick(TObject *Sender)
+{
+        //ButtonGameEnd -> Visible = false;
+        //pokazanie poczatkowych labeli
+        //LabelChooseClass -> Visible = true;
+        //ButtonChooseWarrior -> Visible = true;
+        //ButtonChooseRogue -> Visible = true;
+        //ButtonChoosePriest -> Visible = true;
+        //ukrycie poprzednich obiektow
+        //ImagePlayer -> Visible = false;
+        //ImageEnemy -> Visible = false;
+        //LabelPlayerName -> Visible = false;
+        //LabelEnemyClass -> Visible = false;
+        exit(0);
+}
+//---------------------------------------------------------------------------
+
